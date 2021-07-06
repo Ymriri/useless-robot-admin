@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-let base = '';
+let base = 'http://localhost:8880/robot/';
 
-export const requestLogin = params => { return axios.post(`${base}/login`, params).then(res => res.data); };
+export const getMemberList = params => { return axios.get(`${base}getMemberList`, { params: params }); };
 
-export const getUserList = params => { return axios.get(`${base}/user/list`, { params: params }); };
+export const getGroupInfo = params => { return axios.get(`${base}getGroupInfo`, { params: params }); };
 
-export const getUserListPage = params => { return axios.get(`${base}/user/listpage`, { params: params }); };
+export const getGroupList = params => { return axios.get(`${base}getGroupList`, { params }); };
 
 export const removeUser = params => { return axios.get(`${base}/user/remove`, { params: params }); };
 
