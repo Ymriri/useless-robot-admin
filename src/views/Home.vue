@@ -21,33 +21,24 @@
       </el-col> -->
     </el-col>
     <el-col :span="24" class="main">
-      <aside :class="collapsed?'menu-collapsed':'menu-expanded'">
+      <aside>
         <!--导航菜单-->
-        <el-menu :default-active="$route.path" class="el-menu-vertical-demo" @open="handleopen" @close="handleclose" @select="handleselect" unique-opened router v-show="!collapsed">
+        <el-menu :default-active="$route.path" class="el-menu-vertical-demo" :collapse-transition="false" @select="handleselect" :collapse="collapsed">
           <template v-for="(item,index) in $router.options.routes" v-if="!item.hidden">
-            <el-submenu :index="index+''" v-if="!item.leaf">
-              <template slot="title"><i :class="item.iconCls"></i>{{item.name}}</template>
+            <el-submenu :index="index+''" v-if="!item.leaf" :key="index">
+              <!-- <template slot="title"><i :class="item.iconCls"></i>{{item.name}}</template> -->
+              <template slot="title">
+                <i :class="item.iconCls"></i>
+                <span slot="title">{{item.name}}</span>
+              </template>
               <el-menu-item v-for="child in item.children" :index="child.path" :key="child.path" v-if="!child.hidden">{{child.name}}</el-menu-item>
             </el-submenu>
-            <el-menu-item v-if="item.leaf&&item.children.length>0" :index="item.children[0].path"><i :class="item.iconCls"></i>{{item.children[0].name}}</el-menu-item>
+            <el-menu-item v-if="item.leaf&&item.children.length>0" :key="index" :index="item.children[0].path">
+              <i :class="item.iconCls"></i>
+              <span slot="title">{{item.children[0].name}}</span>
+            </el-menu-item>
           </template>
         </el-menu>
-        <!--导航菜单-折叠后-->
-        <ul class="el-menu el-menu-vertical-demo collapsed" v-show="collapsed" ref="menuCollapsed">
-          <li v-for="(item,index) in $router.options.routes" :key="index" v-if="!item.hidden" class="el-submenu item">
-            <div v-if="!item.leaf">
-              <div class="el-submenu__title" style="padding-left: 20px;" @mouseover="showMenu(index,true)" @mouseout="showMenu(index,false)"><i :class="item.iconCls"></i></div>
-              <ul class="el-menu submenu" :class="'submenu-hook-'+index" @mouseover="showMenu(index,true)" @mouseout="showMenu(index,false)">
-                <li v-for="child in item.children" v-if="!child.hidden" :key="child.path" class="el-menu-item" style="padding-left: 40px;" :class="$route.path==child.path?'is-active':''" @click="$router.push(child.path)">{{child.name}}</li>
-              </ul>
-            </div>
-            <div v-else>
-          <li class="el-submenu">
-            <div class="el-submenu__title el-menu-item" style="padding-left: 20px;height: 56px;line-height: 56px;padding: 0 20px;" :class="$route.path==item.children[0].path?'is-active':''" @click="$router.push(item.children[0].path)"><i :class="item.iconCls"></i></div>
-          </li>
-          </div>
-          </li>
-        </ul>
       </aside>
       <section class="content-container">
         <div class="grid-content bg-purple-light">
@@ -101,6 +92,7 @@ export default {
       //console.log('handleclose');
     },
     handleselect: function (a, b) {
+      this.$router.push(a)
     },
     //退出登录
     logout: function () {
@@ -131,7 +123,6 @@ export default {
       this.sysUserName = user.name || '';
       this.sysUserAvatar = user.avatar || '';
     }
-
   }
 }
 
@@ -140,6 +131,10 @@ export default {
 <style scoped lang="scss">
 @import "~scss_vars";
 
+.el-menu-vertical-demo:not(.el-menu--collapse) {
+  width: 200px;
+  min-height: 400px;
+}
 .container {
   position: absolute;
   top: 0px;
@@ -185,10 +180,10 @@ export default {
       }
     }
     .logo-width {
-      width: 230px;
+      width: 201px;
     }
     .logo-collapse-width {
-      width: 60px;
+      width: 65px;
     }
     .tools {
       padding: 0px 23px;
@@ -206,8 +201,8 @@ export default {
     bottom: 0px;
     overflow: hidden;
     aside {
-      flex: 0 0 230px;
-      width: 230px;
+      // flex: 0 0 200px;
+      // width: 200px;
       // position: absolute;
       // top: 0px;
       // bottom: 0px;
