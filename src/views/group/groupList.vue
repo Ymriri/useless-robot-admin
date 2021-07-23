@@ -33,6 +33,8 @@
       </el-table-column>
       <el-table-column label="操作" min-width="160">
         <template slot-scope="scope">
+          <el-switch style="margin:20px" @change="power" v-model="scope.row.powerSwitch" active-text="开启" inactive-text="关闭">
+          </el-switch>
           <el-button size="small" @click="toManager(scope.row.groupCode)">管理群</el-button>
           <el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">退群</el-button>
         </template>

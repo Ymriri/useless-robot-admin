@@ -1,23 +1,15 @@
 <template>
   <section>
-    <div>
+    <div v-if="groupInfo.groupCode">
       <el-page-header @back="goBack" :content="groupInfo.groupName||'群信息'" style="height:50px;line-height:50px">
       </el-page-header>
       <el-container style="height:60vh">
         <el-aside width="20%" :style="'background:'+backgroundColor">
-          <el-skeleton style="width: 100%" :loading="loading" animated>
-            <template slot="template">
-              <el-skeleton-item variant="image" style="width: 200px;" />
-              <div style="padding: 14px;">
-                <el-skeleton-item variant="h3" style="width: 50%;" />
-              </div>
-            </template>
-            <div style="width:100%;">
-              <canvas id="myCanvas" style="display:none"></canvas>
-              <img id="img" :src="groupInfo.groupAvatar" alt="" style="width:80%;margin:10px auto">
-            </div>
-            <div style="width:100%;height:50px;">{{groupInfo.groupName}}</div>
-          </el-skeleton>
+          <div style="width:100%;">
+            <canvas id="myCanvas" style="display:none"></canvas>
+            <img id="img" :src="groupInfo.groupAvatar" alt="" style="width:80%;margin:10px auto">
+          </div>
+          <div style="width:100%;height:50px;">{{groupInfo.groupName}}</div>
         </el-aside>
         <el-main :style="'background:'+backgroundColor2">
           <el-tabs v-model="activeName" @tab-click="handleClick">
@@ -38,106 +30,16 @@
               </div>
             </el-tab-pane>
             <el-tab-pane label="成员" name="member">
-              <el-col :span="24" style="padding: 0px;margin: 0px">
-                <el-form :inline="true" size="mini">
-                  <el-form-item size="mini">
-                    <el-input size="mini" v-model="memberName" placeholder="搜索群成员" @change="searchMember"></el-input>
-                  </el-form-item>
-                  <el-form-item size="mini">
-                    <el-button size="mini" type="primary" @click="searchMember">搜索</el-button>
-                  </el-form-item>
-                </el-form>
-              </el-col>
-              <el-table height="500" :data="memberList" style="width: 100%">
-                <el-table-column label="头像" width="80">
-                  <template width="80" slot-scope="scope">
-                    <div style="width:40px;height:50px;display:flex;align-items:center;">
-                      <img style="width:40px;height:40px;" :src="scope.row.accountAvatar">
-                    </div>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="accountNickname" label="成员" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column prop="accountRemarkOrNickname" label="群昵称" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column prop="accountCode" label="QQ号" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column prop="permission" label="权限" min-width="80" :formatter="getPermission">
-                </el-table-column>
-                <el-table-column prop="joinTime" label="入群时间" :formatter="formatDate" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column prop="lastSpeakTime" label="最后发言" :formatter="formatDate" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column prop="muteTime" label="禁言时长" :formatter="formatTime" min-width="100" sortable>
-                </el-table-column>
-                <el-table-column label="操作" min-width="160">
-                  <template slot-scope="scope">
-                    <!-- <el-button size="small" @click="toManager(scope.row.groupCode)">管理群</el-button>
-                    <el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">退群</el-button> -->
-                  </template>
-                </el-table-column>
-              </el-table>
+              <memberList :groupInfo="groupInfo" :memberList="memberList" @updateMember="updateMember"></memberList>
             </el-tab-pane>
             <el-tab-pane label="功能设置" name="setting">
-              <el-tabs tab-position="left" style="height: 100%;" value="autoReply">
+              <el-tabs tab-position="left" style="height: 100%;">
                 <el-tab-pane label="机器人状态">
                   <el-switch style="margin:20px" @change="power" v-model="groupInfo.powerSwitch" active-text="开启" inactive-text="关闭">
                   </el-switch>
                 </el-tab-pane>
-                <el-tab-pane label="自动回复" name="autoReply">
-                  <el-col :span="24" style="margin:5px">
-                    <el-button icon="el-icon-circle-plus" type="primary" @click="messageDialogVisible = !messageDialogVisible" size="mini">添加</el-button>
-                    <el-popconfirm title="确定删除所选消息吗？" @confirm="deleteMessage">
-                      <el-button slot="reference" icon="el-icon-remove" type="danger" size="mini" :disabled="messageMultipleSelection.length==0">删除</el-button>
-                    </el-popconfirm>
-                  </el-col>
-                  <el-dialog title="添加自动回复消息" :visible.sync="messageDialogVisible">
-                    <el-form :model="form" :rules="rules" ref="messageForm">
-                      <el-form-item label="消息内容" prop="message" :label-width="formLabelWidth">
-                        <el-autocomplete :highlightFirstItem="true" style="width:100%" v-model="form.message" :fetch-suggestions="(val, cb)=>{querySearch(val, cb, 'message')}" :trigger-on-focus="false" @select="(val)=>handleSelect(val, 'message')" ref='messageInput'></el-autocomplete>
-                      </el-form-item>
-                      <el-form-item label="回复内容" prop="answer" :label-width="formLabelWidth">
-                        <el-autocomplete :highlightFirstItem="true" style="width:100%" v-model="form.answer" :fetch-suggestions="(val, cb)=>{querySearch(val, cb, 'answer')}" :trigger-on-focus="false" @select="(val)=>handleSelect(val, 'answer')" ref='answerInput'></el-autocomplete>
-                      </el-form-item>
-                    </el-form>
-                    <div slot="footer" class="dialog-footer">
-                      <el-button @click="resetForm">取 消</el-button>
-                      <el-button type="primary" @click="submitForm">确 定</el-button>
-                    </div>
-                  </el-dialog>
-                  <el-table ref="multipleTable" :data="groupInfo.messageList" tooltip-effect="dark" style="width: 100%" @selection-change="handleMessageSelectionChange">
-                    <el-table-column type="selection" min-width="55">
-                    </el-table-column>
-                    <el-table-column prop="message" label="消息内容" min-width="120">
-                      <template slot-scope="scope">
-                        <el-tooltip placement="top" v-if="scope.row.messageTooltip">
-                          <div slot="content">
-                            <div v-for="item in scope.row.messageTooltip" :key="item">{{item}}<br /></div>
-                          </div>
-                          <div v-html="scope.row.showMessage"></div>
-                        </el-tooltip>
-                        <div v-else v-html="scope.row.showMessage"></div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="answer" label="回复内容" min-width="120">
-                      <template slot-scope="scope">
-                        <el-tooltip placement="top" v-if="scope.row.answerTooltip">
-                          <div slot="content">
-                            <div v-for="item in scope.row.answerTooltip" :key="item">{{item}}<br /></div>
-                          </div>
-                          <div v-html="scope.row.showAnswer"></div>
-                        </el-tooltip>
-                        <div v-else v-html="scope.row.showAnswer"></div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="添加人" width="100">
-                      <template slot-scope="scope">
-                        <el-tooltip :content="scope.row.nickname" placement="top">
-                          <div>{{ scope.row.qq }}</div>
-                        </el-tooltip>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                <el-tab-pane label="自动回复">
+                  <autoReply :groupInfo="groupInfo" :memberList="memberList" @updateGroup="getGroup"></autoReply>
                 </el-tab-pane>
                 <!-- <el-tab-pane label="禁言关键词">
                   <el-col :span="24" style="margin:5px">
@@ -151,9 +53,9 @@
                     </el-table-column>
                   </el-table>
                 </el-tab-pane> -->
-                <!-- <el-tab-pane label="定时任务">
-
-                </el-tab-pane> -->
+                <el-tab-pane label="定时任务">
+                  <timeTask :groupInfo="groupInfo" :memberList="memberList" @updateGroup="getGroup"></timeTask>
+                </el-tab-pane>
               </el-tabs>
             </el-tab-pane>
           </el-tabs>
@@ -164,37 +66,25 @@
 </template>
 
 <script>
-import { addMessage, removeMessages, powerSwitch, getMemberList, getGroupInfo, getAts } from '../../api/api';
-
+import { powerSwitch, getGroupInfo } from '../../api/api';
+import autoReply from './autoReply.vue'
+import memberList from './memberList.vue'
+import timeTask from './timeTask.vue'
 export default {
+  components: {
+    autoReply,
+    memberList,
+    timeTask
+  },
   data() {
     return {
       specialChar: '‭', //看不见的特殊字符,用于区分@
-      messageMultipleSelection: [],
-      messageDialogVisible: false,
-      form: {
-        message: '',
-        answer: ''
-      },
-      rules: {
-        message: [
-          { required: true, message: '请输入消息内容', trigger: 'change' }
-        ],
-        answer: [
-          { required: true, message: '请输入回复内容', trigger: 'change' }
-        ],
-      },
-      formLabelWidth: '120px',
-      banMessageMultipleSelection: [],
       groupCode: '',
       groupInfo: {},
       memberList: [],
-      loading: true,
       activeName: 'info',
       backgroundColor: '',
       backgroundColor2: '',
-      memberName: '',
-      dynamicObj: {},
     }
   },
   mounted() {
@@ -202,86 +92,20 @@ export default {
     this.getInfo()
   },
   methods: {
-    deleteMessage() {
-      console.log(this.messageMultipleSelection);
-      removeMessages({
-        groupCode: this.groupCode,
-        messageList: this.messageMultipleSelection.map(i => i.bakMessage || i.message)
-      }).then(res => {
-        if (res.data.code == 0) {
-          this.$message({
-            message: '删除成功',
-            type: 'success'
-          });
-          this.getGroup()
-        } else {
-          this.$message.error(res.data.msg);
-        }
-      })
-    },
-    handleSelect(e, type) {
-      var endPos = this.$refs[type + 'Input'].getInput().selectionEnd
-      var startPos = this.$refs[type + 'Input'].getInput().selectionStart
-      let val = this.dynamicObj['bak' + type]
-      let start = val.substring(0, startPos - 1)
-      let end = val.substring(endPos)
-      this.form[type] = start + e.atNeko + end
-      setTimeout(() => {
-        this.$refs[type + 'Input'].focus()
-        this.$refs[type + 'Input'].getInput().selectionStart = (start + e.atNeko).length
-        this.$refs[type + 'Input'].getInput().selectionEnd = (start + e.atNeko).length
-      }, 0);
-    },
-    querySearch(val, cb, type) {
-      // this.setCaretPosition(this.$refs[type + 'Input'].$refs.input.$refs.input, 4)
-      this.$refs[type + 'Input'].highlight('1194151796')
-      var endPos = this.$refs[type + 'Input'].getInput().selectionEnd
-      let str = val.substring(0, endPos)
-      if (str.charAt(str.length - 1) == '@') {
-        cb(this.memberList)
-        this.$set(this.dynamicObj, 'bak' + type, this.form[type])
-        return
+    handleClick(tab, event) {
+      if (tab.index == 1) {
+        // this.getMember()
       }
-      if (~val.indexOf('@')) {
-        str = str.substring(str.indexOf('@') + 1)
-        let memberList = this.memberList.filter(item => ~item.accountRemarkOrNickname.indexOf(str) || ~item.accountCode.indexOf(str));
-        cb(memberList)
-        return
-      }
-      cb([])
     },
-    resetForm() {
-      this.form = {
-        message: '',
-        answer: ''
-      }
-      this.messageDialogVisible = false
+    goBack() {
+      this.$router.go(-1)
     },
-    submitForm() {
-      this.$refs.messageForm.validate((valid) => {
-        if (valid) {
-          this.messageDialogVisible = false
-          addMessage(Object.assign({
-            groupCode: this.groupCode
-          }, this.form)).then(res => {
-            if (res.data.code == 0) {
-              this.$message({
-                message: '添加成功',
-                type: 'success'
-              });
-              this.getGroup()
-            } else {
-              this.$message.error(res.data.msg);
-            }
-          })
-          this.form = {
-            message: '',
-            answer: ''
-          }
-        } else {
-          return false;
-        }
-      });
+    getInfo() {
+      this.getGroup()
+      // this.getMember()
+    },
+    updateMember(memberList) {
+      this.memberList = memberList
     },
     power(e) {
       var that = this
@@ -297,47 +121,6 @@ export default {
         } else {
           that.$message.error(res.data.msg);
         }
-      })
-    },
-    toggleSelection(rows) {
-      if (rows) {
-        rows.forEach(row => {
-          this.$refs.multipleTable.toggleRowSelection(row);
-        });
-      } else {
-        this.$refs.multipleTable.clearSelection();
-      }
-    },
-    handleMessageSelectionChange(val) {
-      this.messageMultipleSelection = val;
-    },
-    handleBanMessageSelectionChange(val) {
-      this.banMessageMultipleSelection = val;
-    },
-    handleClick(tab, event) {
-      if (tab.index == 1) {
-        this.getMember()
-      }
-    },
-    goBack() {
-      this.$router.go(-1)
-    },
-    getInfo() {
-      this.getGroup()
-      this.getMember()
-    },
-    getMember() {
-      getMemberList({ groupCode: this.groupCode }).then((res) => {
-        let memberList = res.data.result
-        let qqList = memberList.map(i => i.accountCode)
-        getAts({ qqList }).then(res => {
-          Object.keys(res.data.result).forEach(item => {
-            let member = memberList.find(member => item == member.accountCode)
-            member.atNeko = res.data.result[item]
-            member.value = member.accountRemarkOrNickname + '(' + member.accountCode + ')'
-          });
-        })
-        this.memberList = memberList
       })
     },
     getGroup() {
@@ -377,43 +160,7 @@ export default {
             }
           })
         }
-        this.loading = false
       });
-    },
-    searchMember() {
-      getMemberList({ groupCode: this.groupCode, search: this.memberName }).then((res) => {
-        this.memberList = res.data.result
-      })
-    },
-    formatDate(row, column, value) {
-      return new Date(value).format('yyyy-MM-dd')
-    },
-    formatTime(row, column, val) {
-      val = val / 1000
-      var second = val,
-        minute = parseInt(second / 60),
-        hour = 0,
-        day = 0;
-      second %= 60;
-      if (minute > 60) {
-        hour = parseInt(minute / 60);
-        minute %= 60;
-      }
-      if (hour > 24) {
-        day = parseInt(hour / 24);
-        hour %= 24;
-      }
-      return (day ? day + '天' : '') + (hour ? hour + '小时' : '') + (minute ? minute + '分' + second + '秒' : second ? second + '秒' : '')
-    },
-    getPermission(row) {
-      switch (row.permission) {
-        case "OWNER":
-          return '群主'
-        case "ADMINISTRATOR":
-          return '管理员'
-        default:
-          break;
-      }
     },
     getImageColor(canvas, img) {
       canvas.width = img.width;

@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-let base = 'http://localhost:8880/robot/';
+let base = process.env.HOST + 'robot/';
 axios.interceptors.request.use(config => {
-  console.log(config);
   switch (config.method) {
     case 'get':
     case 'delete':
@@ -23,13 +22,14 @@ axios.interceptors.request.use(config => {
     default:
       break;
   }
-  console.log(config);
   return config;
 }, err => Promise.reject(error));
 
 
 
 export const getMemberList = params => { return axios.get(`${base}getMemberList`, { params }); };
+
+export const getMemberInfo = params => { return axios.get(`${base}getMemberInfo`, { params }); };
 
 export const getGroupInfo = params => { return axios.get(`${base}getGroupInfo`, { params }); };
 
@@ -46,3 +46,7 @@ export const addMessage = params => { return axios.post(`${base}message/addMessa
 export const removeMessage = params => { return axios.delete(`${base}message/removeMessage`, { params }); };
 
 export const removeMessages = params => { return axios.delete(`${base}message/removeMessages`, { params }); };
+
+export const getLoginQrCode = params => { return axios.get(`${base}getLoginQrCode`, { params }); };
+
+export const getLoginState = params => { return axios.get(`${base}getLoginState`, { params }); };
